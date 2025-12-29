@@ -32,6 +32,7 @@ Upload any PDF and ask questions in plain English; the bot answers **only** from
 
 ## 📸 Screenshot
 
+<img width="1897" height="1017" alt="image" src="https://github.com/user-attachments/assets/db54ee47-0d7a-4f01-893f-858ce76f5c56" />
 
 
 ---
