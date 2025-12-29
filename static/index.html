@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF RAG Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2f3, #d9e2ec);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .box {
+            width: 430px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        h3 {
+            text-align: center;
+            margin: 5px 0 10px;
+        }
+        .upload {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        #chat {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+        .msg {
+            max-width: 80%;
+            padding: 8px 10px;
+            margin: 6px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .user {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+        .bot {
+            background: #e4e6eb;
+            color: black;
+            margin-right: auto;
+        }
+        .input-area {
+            display: flex;
+            gap: 5px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        button:disabled {
+            background: #aaa;
+        }
+        .status {
+            font-size: 12px;
+            color: green;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h3>📄 PDF RAG Chatbot</h3>
+
+    <div class="upload">
+        <input type="file" id="pdf" accept="application/pdf">
+        <button onclick="uploadPDF()">Upload</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="chat"></div>
+
+    <div class="input-area">
+        <input id="question" placeholder="Ask something from the PDF..." />
+        <button id="sendBtn" onclick="send()">Send</button>
+    </div>
+</div>
+
+<script>
+let pdfReady = false;
+
+function add(text, type) {
+    const div = document.createElement("div");
+    div.className = "msg " + type;
+    div.innerText = text;
+    const chat = document.getElementById("chat");
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+async function uploadPDF() {
+    const file = document.getElementById("pdf").files[0];
+    if (!file) return alert("Please select a PDF");
+
+    const form = new FormData();
+    form.append("file", file);
+
+    document.getElementById("status").innerText = "Processing PDF...";
+    add("Uploading and processing PDF...", "bot");
+
+    const res = await fetch("/upload-pdf", {
+        method: "POST",
+        body: form
+    });
+
+    const data = await res.json();
+    pdfReady = true;
+
+    document.getElementById("status").innerText =
+        "PDF ready. You can ask questions now.";
+    document.getElementById("question").disabled = false;
+    document.getElementById("sendBtn").disabled = false;
+
+    add(data.message, "bot");
+}
+
+async function send() {
+    const input = document.getElementById("question");
+    const q = input.value.trim();
+    if (!q || !pdfReady) return;
+
+    add(q, "user");
+    input.value = "";
+
+    const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q })
+    });
+
+    const data = await res.json();
+    add(data.answer || data.error, "bot");
+}
+
+document.getElementById("question")
+    .addEventListener("keypress", e => {
+        if (e.key === "Enter") send();
+    });
+</script>
+
+</body>
+</html>
